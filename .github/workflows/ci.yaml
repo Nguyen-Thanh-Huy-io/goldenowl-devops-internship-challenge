@@ -32,7 +32,7 @@ jobs:
       - name: Build image (no push)
         run: docker build -t goldenowl-app:ci ./src
 
-  trivy:
+    trivy:
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -42,7 +42,7 @@ jobs:
         run: docker build -t goldenowl-app:ci ./src
 
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: goldenowl-app:ci
           scanners: vuln
