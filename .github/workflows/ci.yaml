@@ -33,7 +33,7 @@ jobs:
         run: docker build -t goldenowl-app:ci ./src
 
   trivy:
-    needs: test
+    needs: docker-build
     runs-on: ubuntu-latest
 
     permissions:
@@ -43,9 +43,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Build image
-        run: docker build -t goldenowl-app:ci ./src
 
       - name: Trivy scan - report HIGH and CRITICAL
         uses: aquasecurity/trivy-action@v0.36.0
