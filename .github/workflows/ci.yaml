@@ -1,6 +1,6 @@
 name: ci
 
-  on:
+on:
     push:
       branches:
         - 'feature/**'
@@ -8,13 +8,13 @@ name: ci
       branches:
         - master
 
-  jobs:
-    test:
-      runs-on: ubuntu-latest
-      defaults:
-        run:
-          working-directory: src
-      steps:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src
+    steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -24,7 +24,7 @@ name: ci
       - run: npm ci
       - run: npm test
     
-    docker-build:
+  docker-build:
     needs: test
     runs-on: ubuntu-latest
     steps:
