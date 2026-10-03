@@ -32,7 +32,7 @@ jobs:
       - name: Build image (no push)
         run: docker build -t goldenowl-app:ci ./src
 
-    trivy:
+  trivy:
     needs: test
     runs-on: ubuntu-latest
     steps:
