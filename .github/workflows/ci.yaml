@@ -29,23 +29,55 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build image (no push)
+      - name: Build image 
         run: docker build -t goldenowl-app:ci ./src
 
   trivy:
     needs: test
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Build image
         run: docker build -t goldenowl-app:ci ./src
 
-      - name: Scan image with Trivy
+      - name: Trivy scan - report HIGH and CRITICAL
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: goldenowl-app:ci
           scanners: vuln
           severity: CRITICAL,HIGH
           ignore-unfixed: true
+          format: sarif
+          output: trivy-results.sarif
           exit-code: '0'
+
+      - name: Upload Trivy SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-image-scan
+
+      - name: Upload Trivy report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results
+          path: trivy-results.sarif
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Trivy security gate - CRITICAL
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: goldenowl-app:ci
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
