@@ -1,50 +1,50 @@
-name: ci
+name: CI
 
 on:
-    push:
-      branches:
-        - 'feature/**'
-    pull_request:
-      branches:
-        - master
+  push:
+    branches:
+      - 'feature/**'
+  pull_request:
+    branches:
+      - master
 
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: src
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: src/package-lock.json
-      - run: npm ci
-      - run: npm test
-    
-  docker-build:
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+  build-and-trivy:
+    name: Build image and Trivy scan
     needs: test
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build image 
-        run: docker build -t goldenowl-app:ci ./src
-
-  trivy:
-    needs: docker-build
-    runs-on: ubuntu-latest
-
     permissions:
       contents: read
       security-events: write
       actions: read
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Trivy scan - report HIGH and CRITICAL
+      - name: Build image
+        run: docker build -t goldenowl-app:ci ./src
+
+      - name: Trivy - scan image (report HIGH and CRITICAL)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: goldenowl-app:ci
@@ -55,13 +55,14 @@ jobs:
           output: trivy-results.sarif
           exit-code: '0'
 
-      - name: Upload Trivy SARIF to GitHub
+      - name: Trivy - upload SARIF to GitHub Security
+        if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
           category: trivy-image-scan
 
-      - name: Upload Trivy report artifact
+      - name: Trivy - upload report artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -70,7 +71,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Trivy security gate - CRITICAL
+      - name: Trivy - security gate (fail on CRITICAL)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: goldenowl-app:ci
