@@ -31,3 +31,21 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build image (no push)
         run: docker build -t goldenowl-app:ci ./src
+
+  trivy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t goldenowl-app:ci ./src
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: goldenowl-app:ci
+          scanners: vuln
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '0'
