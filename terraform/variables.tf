@@ -33,3 +33,9 @@ variable "container_port" {
   type        = number
   default     = 3000
 }
+
+variable "health_check_path" {
+  description = "Path the ALB uses to health check the app"
+  type        = string
+  default     = "/"
+}
