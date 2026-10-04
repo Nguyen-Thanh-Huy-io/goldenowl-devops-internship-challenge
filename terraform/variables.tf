@@ -91,3 +91,15 @@ variable "cpu_target_value" {
   type        = number
   default     = 60
 }
+
+variable "domain_name" {
+  description = "Root domain managed in Route 53 (hosted zone must exist)"
+  type        = string
+  default     = "thanhhuy0210.id.vn"
+}
+
+variable "app_subdomain" {
+  description = "Subdomain for the app"
+  type        = string
+  default     = "goldenowl"
+}
