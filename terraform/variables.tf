@@ -40,10 +40,20 @@ variable "health_check_path" {
   default     = "/"
 }
 
-variable "github_repo" {
-  description = "GitHub repository allowed to deploy, as owner/name"
-  type        = string
-  default     = "Nguyen-Thanh-Huy-io/goldenowl-devops-internship-challenge"
+variable "github_repository" {
+  type = object({
+    owner    = string
+    owner_id = string
+    repo     = string
+    repo_id  = string
+  })
+
+  default = {
+    owner    = "Nguyen-Thanh-Huy-io"
+    owner_id = "188283969"
+    repo     = "goldenowl-devops-internship-challenge"
+    repo_id  = "1402822141"
+  }
 }
 
 variable "container_cpu" {
