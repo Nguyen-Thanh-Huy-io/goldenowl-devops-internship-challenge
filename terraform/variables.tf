@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Prefix for resource names"
   type        = string
-  default     = "golden-owl-devops-internship"
+  default     = "goldenowl-internship"
 }
 
 variable "environment" {
