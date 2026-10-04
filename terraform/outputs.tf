@@ -42,3 +42,8 @@ output "github_actions_role_arn" {
   description = "IAM role ARN for GitHub Actions OIDC (secret AWS_ROLE_ARN)"
   value       = aws_iam_role.github_actions.arn
 }
+
+output "app_https_url" {
+  description = "HTTPS URL of the app"
+  value       = "https://${local.app_fqdn}"
+}
