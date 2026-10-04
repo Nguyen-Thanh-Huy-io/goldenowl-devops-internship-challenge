@@ -39,3 +39,9 @@ variable "health_check_path" {
   type        = string
   default     = "/"
 }
+
+variable "github_repo" {
+  description = "GitHub repository allowed to deploy, as owner/name"
+  type        = string
+  default     = "Nguyen-Thanh-Huy-io/goldenowl-devops-internship-challenge"
+}
