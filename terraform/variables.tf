@@ -79,5 +79,5 @@ variable "max_capacity" {
 variable "cpu_target_value" {
   description = "Target average CPU utilization (%) for target tracking"
   type        = number
-  default     = 50
+  default     = 60
 }
