@@ -7,14 +7,20 @@ curl https://goldenowl.thanhhuy0210.id.vn
 # {"message":"Welcome warriors to Golden Owl!"}
 ```
 
-## 📌 Submission Overview
+## Submission
+
+| Item | Value |
+|---|---|
+| Public GitHub repository | https://github.com/Nguyen-Thanh-Huy-io/goldenowl-devops-internship-challenge |
+| Deployment link | https://goldenowl.thanhhuy0210.id.vn |
+| Visual flow diagram (manually created in draw.io) | [CI/CD flow](diagram/CI_CD_Pipeline.png) · [AWS architecture](diagram/architecture.png) |
+| Final Docker image size | **49.1 MB** compressed (ECR) / 199 MB on disk |
+
+## Submission Overview
 
 | Requirement | Implementation Details | Status |
 |---|---|---|
-| Live Application URL | [https://goldenowl.thanhhuy0210.id.vn](https://goldenowl.thanhhuy0210.id.vn) | ✅ Done |
-| Source Code | [GitHub repository](https://github.com/Nguyen-Thanh-Huy-io/goldenowl-devops-internship-challenge) | ✅ Done |
 | Container Registry | Amazon ECR `goldenowl-internship-staging` (immutable tags = commit SHA, scan on push) | ✅ Done |
-| Final Docker Image Size | **<ECR_SIZE> MB** compressed in ECR / <DISK_SIZE> MB on disk (multi-stage, Node.js 20 Alpine, non-root) | ✅ Done |
 | Visual Flow Diagram | [`diagram/cicd-flow.png`](diagram/cicd-flow.png), [`diagram/aws-architecture.png`](diagram/aws-architecture.png) (manually created in draw.io) | ✅ Done |
 | CI Automation | GitHub Actions [`ci.yml`](.github/workflows/ci.yml): test, build, Trivy scan on push to `feature/**` | ✅ Done |
 | CD Automation | GitHub Actions [`cd.yml`](.github/workflows/cd.yml): build, push to ECR, deploy to ECS on merge to `master` (AWS access via OIDC) | ✅ Done |
@@ -23,31 +29,39 @@ curl https://goldenowl.thanhhuy0210.id.vn
 | Security Scanning (Bonus ⭐) | Trivy in CI (SARIF report, gate on CRITICAL) + ECR scan on push | ✅ Done |
 | HTTPS Support (Bonus ⭐) | ACM certificate on the ALB, HTTP redirects to HTTPS | ✅ Done |
 | Automatic Rollback (Bonus ⭐) | ECS deployment circuit breaker with rollback + `wait-for-service-stability` in CD | ✅ Configured |
-| Terraform (Bonus ⭐) | All AWS resources defined in Terraform | ✅ Done |
+| Terraform (Bonus ⭐) | All AWS resources defined in Terraform, except the pre-created Route 53 hosted zone (see "Manual steps outside Terraform") | ✅ Done |
+
 
 ### Image size evidence
-![ECR image size](diagram/ecr-image-size.png)
-![docker images](diagram/docker-images.png)
 
-## ✨ Highlights
+**ECR (compressed size)**
 
-- **Image optimization:** cut the image from 315 MB to 198 MB on disk (64 MB to 49.1 MB compressed) by finding dev-only packages wrongly listed in `dependencies`.
+<img src="diagram/ecr-image-size.png" width="700">
+
+&nbsp;
+
+**Local `docker images` (on disk)**
+
+<img src="diagram/docker-images.png" width="700">
+## Highlights
+
+- **Image optimization:** cut the image from 315 MB to 199 MB on disk (64 MB to 49.1 MB compressed) by finding dev-only packages wrongly listed in `dependencies`.
 - **Security:** Trivy scan in CI with a gate on CRITICAL findings; Express dependencies patched with `npm audit fix` (0 production vulnerabilities); ECR scan on push.
 - **No stored AWS credentials:** GitHub Actions authenticates through OIDC, restricted to this repo's `master` branch.
 - **Traceable releases:** immutable ECR tags using the commit SHA, plus a deployment circuit breaker for automatic rollback.
 - **Iterative history:** small, focused commits across feature branches and pull requests.
 
-## 🎨 Diagrams (drawn manually in draw.io)
+## Diagrams (drawn manually in draw.io)
 
 ### CI/CD flow
-![CI/CD flow](diagram/cicd-flow.png)
+![CI/CD flow](diagram/CI_CD_Pipeline.png)
 
 ### AWS architecture
-![AWS architecture](diagram/aws-architecture.png)
+![AWS architecture](diagram/architecture.png)
 
 Source file: `diagram/architecture.drawio`
 
-## 🐳 Docker image
+## Docker image
 
 `src/Dockerfile` (multi-stage, non-root):
 
@@ -65,7 +79,7 @@ The two dev-only packages were pulling about 100 MB of `typescript`, `@typescrip
 
 Base image is `node:20-alpine`. Node 20 has passed its end-of-life date, so upgrading is recommended for real use: change the two `FROM` lines and `node-version` in the workflows. Node 22 produced a larger image in my test (242 MB on disk / 61.4 MB compressed).
 
-## 🔁 CI/CD
+## CI/CD
 
 | Workflow | Trigger | Steps |
 |---|---|---|
@@ -76,7 +90,7 @@ Base image is `node:20-alpine`. Node 20 has passed its end-of-life date, so upgr
 - ECR tags are **immutable** and use the commit SHA, so every deployment is traceable.
 - CI builds the image only to validate and scan it. CD rebuilds and pushes the image that is actually deployed.
 
-## 🏗️ Infrastructure (Terraform, `terraform/`)
+## Infrastructure (Terraform, `terraform/`)
 
 | File | Resources |
 |---|---|
@@ -92,7 +106,7 @@ Base image is `node:20-alpine`. Node 20 has passed its end-of-life date, so upgr
 
 **Auto scaling:** target tracking on `ECSServiceAverageCPUUtilization` at 60%, min 2 / max 4 tasks. ECS publishes the metric to CloudWatch and Application Auto Scaling manages the scale-out and scale-in alarms.
 
-## 🧭 Design decisions
+## Design decisions
 
 - **Public subnets, no NAT Gateway.** Tasks have public IPs but their security group only accepts traffic from the ALB. This avoids the NAT Gateway cost. A production setup would use private subnets with NAT or VPC endpoints.
 - **ECS Fargate** instead of EC2 + Auto Scaling Group: no servers to manage, native rolling deployments and circuit breaker.
@@ -100,22 +114,13 @@ Base image is `node:20-alpine`. Node 20 has passed its end-of-life date, so upgr
 - **Local Terraform state** (git-ignored) for speed; a team setup would use an S3 backend with locking.
 - Terraform ignores `task_definition` and `desired_count` changes on the ECS service, because CD registers new task definitions and auto scaling manages the task count.
 
-## ⚠️ Manual steps outside Terraform
+## Manual steps outside Terraform
 
 - The domain `thanhhuy0210.id.vn` was registered at PA Vietnam and its name servers were pointed to Route 53.
 - The Route 53 hosted zone was created once with the AWS CLI. Terraform reads it with a data source and manages the records inside it.
 - The `AWS_ROLE_ARN` GitHub secret was set by hand from the Terraform output.
 
-## 💻 Run locally
-
-With Docker:
-
-```bash
-docker build -t goldenowl-app ./src
-docker run --rm -p 3000:3000 goldenowl-app
-```
-
-## 🧹 Deploy / destroy
+## Deploy / destroy
 
 ```bash
 cd terraform
@@ -123,78 +128,3 @@ terraform init
 terraform apply
 terraform destroy   # then delete the Route 53 hosted zone manually
 ```
-
-# Golden Owl DevOps Internship - Technical Test
-At Golden Owl, we believe in treating infrastructure as code and automating resource provisioning to the fullest extent possible. 
-
-In this technical test, we challenge you to create a robust CI build pipeline using GitHub Actions. You have the freedom to complete this test in your local environment.
-
-## Your Mission 🌟
-Your mission, should you choose to accept it, is to build a CI/CD pipeline and deploy the application by:
-1. Forking this repository to your personal GitHub account.
-2. Dockerizing a Node.js application, keeping the image **as lightweight as possible** (Please state the final image size in your repository's README so we can see the result of your optimization).
-3. Establishing an automated CI/CD build process using GitHub Actions workflow and a container registry service such as DockerHub or Amazon Elastic Container Registry (ECR) or similar services.
-4. Initiating CI tests automatically when changes are pushed to the feature branch on GitHub.
-5. Utilizing GitHub Actions for Continuous Deployment (CD) to deploy the application to major cloud providers like AWS EC2, AWS ECS or Google Cloud (please submit the deployment link).
-6. Deploying the application behind a **load balancer** with **auto scaling** enabled.
-7. Provisioning **all cloud infrastructure using Infrastructure as Code (IaC)** such as Terraform, AWS CloudFormation, AWS CDK, or Pulumi. Resources created manually through the cloud console will not be accepted. 
-8. Providing a **visual flow diagram** of your workflow and architecture, **created by you without the use of AI** (see [Visual Flow Diagram](#visual-flow-diagram-required-) below).
-
-## Visual Flow Diagram (Required) 🎨
-A `visual flow diagram` is **mandatory** for this test. It must illustrate the sequence of tasks you performed and the architecture you deployed, including:
-- The CI/CD flow
-- The deployed application's infrastructure
-
-**The diagram must be created manually by you and must not be generated by AI.** This means no AI image generators and no AI tools that produce a diagram from a text prompt or from your code. 
-
-Reference tools for creating visual flow diagrams:
-- https://www.drawio.com/
-- https://excalidraw.com/
-- https://www.eraser.io/
-
-## The Bigger Picture 🌏
-This test is designed to evaluate your ability to implement modern automated infrastructure practices while demonstrating a basic understanding of Docker. In your solution, we encourage you to prioritize readability, maintainability, and the principles of DevOps.
-
-## How We Evaluate 🎯
-| Area | Weight |
-|---|---|
-| CI/CD pipeline (tests on push, build, push to registry, deploy) | 25% |
-| Deployment works behind a load balancer with a real auto scaling policy | 25% |
-| Visual flow diagram (accurate, manually created) | 20% |
-| Infrastructure as code / repo quality / commit history | 20% |
-| Docker image optimization (size, multi-stage, non-root, .dockerignore) | 10% |
-
-## Bonus (Optional) ⭐
-- Image vulnerability scan in CI (e.g. Trivy)
-- HTTPS on the load balancer
-- Automatic rollback on failed deployment
-- Infrastructure defined with Terraform
-
-## Submission Guidelines 📬
-Your solution should be showcased in a public GitHub repository. We encourage you to commit early and often. We prefer to see a history of iterative progress rather than a single massive push. 
-
-Your submission must include:
-- The URL of your public GitHub repository
-- The deployment link of your running application
-- The visual flow diagram (manually created, not AI-generated)
-- The final Docker image size
-
-When you've completed the assignment, kindly share these with us.
-
-## Running the Node.js Application Locally 🏃‍♂️
-This is a Node.js application, and running it locally is straightforward:
-- Navigate to the `src` directory by executing `cd src`.
-- Install the project's dependencies listed in the package.json file by running `npm i`.
-- Execute `npm test` to run the application's tests.
-- Start the HTTP server with `npm start`.
-
-You can test it using the following command:
-```shell
-curl localhost:3000
-```
-You should receive the following response:
-```json
-{"message":"Welcome warriors to Golden Owl!"}
-```
-
-Are you ready to embark on this DevOps journey with us? 🚀 Best of luck with your assignment! 🌟
