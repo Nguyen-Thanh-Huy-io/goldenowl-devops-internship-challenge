@@ -45,3 +45,39 @@ variable "github_repo" {
   type        = string
   default     = "Nguyen-Thanh-Huy-io/goldenowl-devops-internship-challenge"
 }
+
+variable "container_cpu" {
+  description = "Fargate task CPU units (256 = 0.25 vCPU)"
+  type        = number
+  default     = 256
+}
+
+variable "container_memory" {
+  description = "Fargate task memory in MiB"
+  type        = number
+  default     = 512
+}
+
+variable "desired_count" {
+  description = "Initial number of tasks (0 until the first image is pushed to ECR)"
+  type        = number
+  default     = 0
+}
+
+variable "min_capacity" {
+  description = "Autoscaling minimum number of tasks"
+  type        = number
+  default     = 2
+}
+
+variable "max_capacity" {
+  description = "Autoscaling maximum number of tasks"
+  type        = number
+  default     = 4
+}
+
+variable "cpu_target_value" {
+  description = "Target average CPU utilization (%) for target tracking"
+  type        = number
+  default     = 50
+}
